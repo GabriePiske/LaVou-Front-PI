@@ -177,8 +177,8 @@ const BottomBar: React.FC = () => {
         label="Home"
         onPress={() => router.push("/")}
       />
-      <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} onPress={() => {}} />
-      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#fff" />} onPress={() => {}} />
+      <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} onPress={() => router.push("/scanner")} />
+      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#fff" />} onPress={() => router.push("/minhasReservas")} />
       <TabItem
         icon={<Ionicons name="person-outline" size={20} color="#fff" />}
         onPress={() => router.push("/(tabs)/profile")}

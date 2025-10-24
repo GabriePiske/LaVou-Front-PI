@@ -9,9 +9,10 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  TextInput,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
@@ -26,13 +27,44 @@ const COLORS = {
   softCard: "#EEF2FF",
 };
 
-export default function ProfileScreen() {
+// Mock de reservas
+const reservasMock = [
+  {
+    id: 1,
+    tipo: "Lavadora",
+    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
+    data: "06 Out 2025, 8:10 PM",
+    status: "COMPLETA",
+  },
+  {
+    id: 2,
+    tipo: "Secadora",
+    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
+    data: "06 Out 2025, 8:10 PM",
+    status: "EM_ANDAMENTO",
+  },
+  {
+    id: 3,
+    tipo: "Lavadora",
+    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
+    data: "05 Out 2025, 8:10 PM",
+    status: "CANCELADA",
+  },
+];
+
+const machineIcons: Record<string, any> = {
+  Lavadora: require("../../assets/images/Lavadora.png"),
+  Secadora: require("../../assets/images/Secadora.png"),
+};
+
+export default function MinhasReservasScreen() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
+      {/* HEADER */}
       <View style={styles.header}>
         <Svg width={width} height={120} viewBox={`0 0 ${width} 120`} style={styles.wave}>
           <Path
@@ -45,7 +77,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/")}>
             <Ionicons name="arrow-back" size={22} color={COLORS.white} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Perfil</Text>
+          <Text style={styles.headerTitle}>Minhas Reservas</Text>
           <View style={{ width: 22 }} />
         </View>
       </View>
@@ -56,24 +88,45 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.centerBox}>
-          <Image source={{ uri: "https://i.pravatar.cc/150?img=47" }} style={styles.avatar} />
-          <Text style={styles.name}>Joanna Matthew</Text>
-          <Text style={styles.phone}>+88 8800805641</Text>
-
-          <TouchableOpacity style={styles.editButton}>
-            <Feather name="edit-2" size={14} color={COLORS.primary} />
-            <Text style={styles.editText}>Editar Perfil</Text>
-          </TouchableOpacity>
+        {/* Campo de busca */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color="#fff" />
+          <TextInput
+            placeholder="Pesquisar reservas..."
+            placeholderTextColor="#fff"
+            style={styles.searchInput}
+          />
         </View>
 
-        <View style={styles.list}>
-          <RowItem icon="pricetag-outline" label="Cupons" onPress={() => {}} />
-          <RowItem icon="time-outline" label="Minhas Reservas" onPress={() => {}} />
-          <RowItem icon="help-circle-outline" label="Perguntas Frequentes" onPress={() => router.push("/faq")} />
-          <RowItem icon="headset-outline" label="Suporte" onPress={() => {}} />
-          <RowItem icon="log-out-outline" label="Sair" onPress={() => {}} />
-        </View>
+        {/* Lista de reservas */}
+        {reservasMock.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <View style={styles.row}>
+              <Image source={machineIcons[item.tipo]} style={styles.icon} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tipo}>{item.tipo}</Text>
+                <Text style={styles.local}>{item.local}</Text>
+                <Text style={styles.data}>{item.data}</Text>
+                <Text
+                  style={[
+                    styles.status,
+                    item.status === "COMPLETA"
+                      ? styles.statusCompleta
+                      : item.status === "EM_ANDAMENTO"
+                      ? styles.statusAndamento
+                      : styles.statusCancelada,
+                  ]}
+                >
+                  {item.status === "COMPLETA"
+                    ? "Completa"
+                    : item.status === "EM_ANDAMENTO"
+                    ? "Em andamento"
+                    : "Cancelada"}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       <BottomBar />
@@ -81,6 +134,7 @@ export default function ProfileScreen() {
   );
 }
 
+/* BARRA INFERIOR */
 function BottomBar() {
   const router = useRouter();
   return (
@@ -89,15 +143,17 @@ function BottomBar() {
         icon={<Ionicons name="home-outline" size={20} color="#fff" />}
         onPress={() => router.replace("/")}
       />
-      <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} onPress={() => {}} />
-      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#fff" />} 
-      onPress={() => router.push("/(tabs)/minhasReservas")} />
-      {/* Perfil ativo */}
+      <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} 
+               onPress={() => router.push("/(tabs)/scanner")}    
+      />
+      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#17108fff" />}
+       active
+        label="reservas"
+     />
       <TabItem
-        active
-        label="Perfil"
+        
         icon={<Ionicons name="person-outline" size={20} color={COLORS.primary} />}
-        onPress={() => {}}
+        onPress={() => router.push("/(tabs)/profile")}
       />
     </View>
   );
@@ -128,26 +184,6 @@ function TabItem({
   );
 }
 
-const RowItem = ({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress?: () => void;
-}) => (
-  <TouchableOpacity style={styles.rowItem} activeOpacity={0.7} onPress={onPress}>
-    <View style={styles.rowLeft}>
-      <View style={styles.rowIcon}>
-        <Ionicons name={icon} size={18} color={COLORS.primary} />
-      </View>
-      <Text style={styles.rowText}>{label}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={18} color={COLORS.gray} />
-  </TouchableOpacity>
-);
-
 /* ESTILOS */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
@@ -173,42 +209,38 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { color: COLORS.white, fontSize: 18, fontWeight: "800" },
 
-  content: { flex: 1, paddingHorizontal: 20 },
+  content: { flex: 1, paddingHorizontal: 20, marginTop: 20 },
 
-  centerBox: { alignItems: "center", marginTop: -40, paddingTop: 50 },
-  avatar: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 4,
-    borderColor: COLORS.white,
-    backgroundColor: COLORS.white,
-  },
-  name: { fontSize: 18, fontWeight: "800", color: COLORS.text, marginTop: 10 },
-  phone: { color: COLORS.gray, marginBottom: 12 },
-  editButton: {
+  searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.lightPrimary,
-    paddingHorizontal: 18,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 12,
+    marginBottom: 18,
   },
-  editText: { color: COLORS.primary, fontWeight: "700", marginLeft: 6 },
+  searchInput: { flex: 1, marginLeft: 8, color: "#fff" },
 
-  list: { marginTop: 20, gap: 10 },
-  rowItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: COLORS.softCard,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  rowLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  rowIcon: { backgroundColor: COLORS.lightPrimary, padding: 8, borderRadius: 10 },
-  rowText: { fontSize: 14, fontWeight: "700", color: COLORS.text },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  icon: { width: 50, height: 50, resizeMode: "contain" },
+  tipo: { fontSize: 16, fontWeight: "700", color: COLORS.text },
+  local: { fontSize: 13, color: COLORS.gray, marginTop: 2 },
+  data: { fontSize: 12, color: "#999", marginTop: 2 },
+  status: { fontSize: 13, fontWeight: "700", marginTop: 6 },
+  statusCompleta: { color: "#2F46A8" },
+  statusAndamento: { color: "#FFA500" },
+  statusCancelada: { color: "#D9534F" },
 
   tabBar: {
     position: "absolute",

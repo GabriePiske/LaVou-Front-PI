@@ -153,7 +153,10 @@ export default function LocalizacaoScreen() {
           onPress={() => router.replace("/")}
         />
         <TabItem icon={<Ionicons name="scan-outline" size={20} color="#dbe3ff" />} />
-        <TabItem icon={<Ionicons name="cart-outline" size={20} color="#dbe3ff" />} />
+        <TabItem 
+        icon={<Ionicons name="cart-outline" size={20} color="#dbe3ff" />} 
+        onPress={() => router.push("/(tabs)/minhasReservas")}            
+        />
         <TabItem
           icon={<Ionicons name="person-outline" size={20} color="#fff" />}
           // ajuste a rota se seu arquivo de perfil for outro

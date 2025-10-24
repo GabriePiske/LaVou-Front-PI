@@ -1,0 +1,11 @@
+#para uso da camera
+
+npx expo install expo-camera
+
+#para uso de icones APENAS SE PRECISAR
+
+npx expo install @expo/vector-icons
+
+#caso falta alguma coisa talvez isto ajude tb
+
+npx expo install expo-camera expo-router react-native-safe-area-context

@@ -120,7 +120,8 @@ function BottomBar() {
         onPress={() => router.replace("/")}
       />
       <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} onPress={() => {}} />
-      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#fff" />} onPress={() => {}} />
+      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#fff" />} 
+      onPress={() => router.push("/(tabs)/minhasReservas")} />
       <TabItem
         active
         label="Perfil"
