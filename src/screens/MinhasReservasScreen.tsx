@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
   StatusBar,
   Platform,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // 👈 usado para buscar o token
+import { apiUrl } from "./config/api";
 
 const { width } = Dimensions.get("window");
 
@@ -27,31 +30,6 @@ const COLORS = {
   softCard: "#EEF2FF",
 };
 
-// Mock de reservas
-const reservasMock = [
-  {
-    id: 1,
-    tipo: "Lavadora",
-    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
-    data: "06 Out 2025, 8:10 PM",
-    status: "COMPLETA",
-  },
-  {
-    id: 2,
-    tipo: "Secadora",
-    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
-    data: "06 Out 2025, 8:10 PM",
-    status: "EM_ANDAMENTO",
-  },
-  {
-    id: 3,
-    tipo: "Lavadora",
-    local: "Av. Dom Joaquim, Três Vendas, Pelotas",
-    data: "05 Out 2025, 8:10 PM",
-    status: "CANCELADA",
-  },
-];
-
 const machineIcons: Record<string, any> = {
   Lavadora: require("../../assets/images/Lavadora.png"),
   Secadora: require("../../assets/images/Secadora.png"),
@@ -59,12 +37,56 @@ const machineIcons: Record<string, any> = {
 
 export default function MinhasReservasScreen() {
   const router = useRouter();
+  const [reservas, setReservas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const fetchReservas = async () => {
+    try {
+      setLoading(true);
+
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        alert("Sessão expirada. Faça login novamente.");
+        router.replace("/");
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/reservas/minhas`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, 
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao carregar reservas");
+      }
+
+      const data = await response.json();
+      setReservas(data || []);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao carregar reservas. Tenta novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReservas();
+  }, []);
+
+  const reservasFiltradas = reservas.filter((item) =>
+    item.tipo.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* HEADER */}
       <View style={styles.header}>
         <Svg width={width} height={120} viewBox={`0 0 ${width} 120`} style={styles.wave}>
           <Path
@@ -82,7 +104,6 @@ export default function MinhasReservasScreen() {
         </View>
       </View>
 
-      {/* CONTEÚDO */}
       <ScrollView
         style={styles.content}
         contentContainerStyle={{ paddingBottom: 110 }}
@@ -95,38 +116,55 @@ export default function MinhasReservasScreen() {
             placeholder="Pesquisar reservas..."
             placeholderTextColor="#fff"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
         </View>
 
-        {/* Lista de reservas */}
-        {reservasMock.map((item) => (
-          <View key={item.id} style={styles.card}>
-            <View style={styles.row}>
-              <Image source={machineIcons[item.tipo]} style={styles.icon} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.tipo}>{item.tipo}</Text>
-                <Text style={styles.local}>{item.local}</Text>
-                <Text style={styles.data}>{item.data}</Text>
-                <Text
-                  style={[
-                    styles.status,
-                    item.status === "COMPLETA"
-                      ? styles.statusCompleta
-                      : item.status === "EM_ANDAMENTO"
-                      ? styles.statusAndamento
-                      : styles.statusCancelada,
-                  ]}
-                >
-                  {item.status === "COMPLETA"
-                    ? "Completa"
-                    : item.status === "EM_ANDAMENTO"
-                    ? "Em andamento"
-                    : "Cancelada"}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
+        {/* Loading */}
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+        ) : reservasFiltradas.length === 0 ? (
+          <Text style={{ textAlign: "center", color: COLORS.gray, marginTop: 20 }}>
+            Nenhuma reserva encontrada.
+          </Text>
+        ) : (
+          reservasFiltradas.map((item) => (
+  <View key={item.id} style={styles.card}>
+    <View style={styles.row}>
+      <Image
+        source={machineIcons[item.maquina?.tipo] || machineIcons.Lavadora}
+        style={styles.icon}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.tipo}>{item.maquina?.tipo}</Text>
+        <Text style={styles.local}>
+          {item.maquina?.lavanderia?.nomeFantasia || "Lavanderia não informada"}
+        </Text>
+        <Text style={styles.data}>
+          {new Date(item.inicio).toLocaleString("pt-BR")}
+        </Text>
+        <Text
+          style={[
+            styles.status,
+            item.pagamento?.status === "PAGO"
+              ? styles.statusCompleta
+              : item.pagamento?.status === "PENDENTE"
+              ? styles.statusAndamento
+              : styles.statusCancelada,
+          ]}
+        >
+          {item.pagamento?.status === "PAGO"
+            ? "Completa"
+            : item.pagamento?.status === "PENDENTE"
+            ? "Em andamento"
+            : "Cancelada"}
+        </Text>
+      </View>
+    </View>
+  </View>
+))
+        )}
       </ScrollView>
 
       <BottomBar />
@@ -143,33 +181,24 @@ function BottomBar() {
         icon={<Ionicons name="home-outline" size={20} color="#fff" />}
         onPress={() => router.replace("/")}
       />
-      <TabItem icon={<Ionicons name="scan-outline" size={20} color="#fff" />} 
-               onPress={() => router.push("/(tabs)/scanner")}    
-      />
-      <TabItem icon={<Ionicons name="cart-outline" size={20} color="#17108fff" />}
-       active
-        label="reservas"
-     />
       <TabItem
-        
-        icon={<Ionicons name="person-outline" size={20} color={COLORS.primary} />}
+        icon={<Ionicons name="scan-outline" size={20} color="#fff" />}
+        onPress={() => router.push("/(tabs)/scanner")}
+      />
+      <TabItem
+        icon={<Ionicons name="cart-outline" size={20} color="#17108fff" />}
+        active
+        label="reservas"
+      />
+      <TabItem
+        icon={<Ionicons name="person-outline" size={20} color="#fff" />}
         onPress={() => router.push("/(tabs)/profile")}
       />
     </View>
   );
 }
 
-function TabItem({
-  icon,
-  label,
-  active,
-  onPress,
-}: {
-  icon: React.ReactNode;
-  label?: string;
-  active?: boolean;
-  onPress?: () => void;
-}) {
+function TabItem({ icon, label, active, onPress }: any) {
   return (
     <TouchableOpacity style={styles.tabItem} activeOpacity={0.8} onPress={onPress}>
       {active ? (

@@ -9,3 +9,8 @@ npx expo install @expo/vector-icons
 #caso falta alguma coisa talvez isto ajude tb
 
 npx expo install expo-camera expo-router react-native-safe-area-context
+
+
+#na questao da api-url o dotenv esta aqui 
+
+npx expo install react-native-dotenv
